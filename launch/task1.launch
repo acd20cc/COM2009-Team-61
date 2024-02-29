@@ -1,0 +1,5 @@
+<launch>
+    <!-- Node for figure eight movement -->
+    <node pkg="com2009_team61" type="FigureOfEight.py" name="figure_eight_node" output="screen">
+    </node>
+</launch>
