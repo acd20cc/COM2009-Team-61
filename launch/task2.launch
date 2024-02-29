@@ -1,0 +1,5 @@
+<launch>
+    <!-- launch file for Task 2 -->
+    <node pkg = "com2009_team61" type = "explore_12zones.py" name = "explore_12zones_node" output = "screen">
+    </node>
+</launch>
