@@ -44,12 +44,12 @@ class FigureEight:
     def calculate_velocity(self, state):
         vel_msg = Twist()
         if state in ['anticlockwise', 'clockwise']:
-            vel_msg.linear.x = 0.10
+            vel_msg.linear.x = 0.115
             # Calculated angular velocity for 1m diameter circle
             if state == 'anticlockwise':
-              vel_msg.angular.z = 0.20
+              vel_msg.angular.z = 0.23
             else:
-                vel_msg.angular.z = -0.20 
+                vel_msg.angular.z = -0.23
         else:  # state == 'stop'
             vel_msg.linear.x = 0
             vel_msg.angular.z = 0
@@ -65,13 +65,15 @@ class FigureEight:
         rospy.on_shutdown(self.shutdownhook)
         while not rospy.is_shutdown() and not self.ctrl_c:
             vel_msg = self.calculate_velocity(self.state)
+            #prints speed and yaw values
+            print("x= ", vel_msg.linear.x, "m, y=", vel_msg.linear.y, "m, yaw=", self.last_yaw, "degrees.")
             self.pub.publish(vel_msg)
             
             if self.state == 'anticlockwise' and self.total_yaw_change >= 2 * math.pi:
                 self.state = 'clockwise'
                 # Reset yaw change counter
                 self.total_yaw_change = 0 
-            elif self.state == 'clockwise' and self.total_yaw_change <= -2 * math.pi:
+            elif self.state == 'clockwise' and self.total_yaw_change <= -2 * math.pi + 0.1:
                 self.state = 'stop'
 
             self.rate.sleep()
