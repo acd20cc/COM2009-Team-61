@@ -70,7 +70,9 @@ class FigureEight:
             #so info is printed at a rate of 1hz (machine is running at 10hz)
             if(self.rate_counter % 10 == 0):
                 #prints speed and yaw values
-                print("x= ", vel_msg.linear.x, "m, y=", vel_msg.linear.y, "m, yaw=", self.last_yaw, "degrees.")
+                x_vel = vel_msg.linear.x
+                y_vel = vel_msg.linear.y
+                print("x= ", "{:.2f}".format(x_vel), "m, y=", "{:.2f}".format(y_vel), "m, yaw=", "{:.1f}".format(self.last_yaw), "degrees.")
             self.pub.publish(vel_msg)
             
             if self.state == 'anticlockwise' and self.total_yaw_change >= 2 * math.pi:
