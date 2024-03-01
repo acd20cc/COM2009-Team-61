@@ -12,6 +12,7 @@ class FigureEight:
         self.pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         self.sub = rospy.Subscriber('/odom', Odometry, self.odom_callback)
         self.rate = rospy.Rate(10)  # 10Hz
+        self.rate_counter = 0
         self.ctrl_c = False
         self.current_yaw = 0.0
         self.initial_yaw = None
@@ -65,8 +66,11 @@ class FigureEight:
         rospy.on_shutdown(self.shutdownhook)
         while not rospy.is_shutdown() and not self.ctrl_c:
             vel_msg = self.calculate_velocity(self.state)
-            #prints speed and yaw values
-            print("x= ", vel_msg.linear.x, "m, y=", vel_msg.linear.y, "m, yaw=", self.last_yaw, "degrees.")
+            self.rate_counter += 1
+            #so info is printed at a rate of 1hz (machine is running at 10hz)
+            if(self.rate_counter % 10 == 0):
+                #prints speed and yaw values
+                print("x= ", vel_msg.linear.x, "m, y=", vel_msg.linear.y, "m, yaw=", self.last_yaw, "degrees.")
             self.pub.publish(vel_msg)
             
             if self.state == 'anticlockwise' and self.total_yaw_change >= 2 * math.pi:
