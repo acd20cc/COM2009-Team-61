@@ -28,7 +28,7 @@ from sensor_msgs.msg import LaserScan
 class Explorer:
     TASK_TIME_SEC = 90.0
     DEFAULT_VEL = 0.26
-    DEFAULT_ANGULAR_VEL = 1.5
+    DEFAULT_ANGULAR_VEL = 0.7
 
     def __init__(self):
         self.node_name = 'explore_12zones_node'
@@ -82,7 +82,7 @@ class Explorer:
             if not self.obstacle_detected:
                 self.rotation_direction = random.choice([1, -1])
                 self.obstacle_detected = True
-                rospy.loginfo('Obstacle detected')
+                rospy.loginfo(f"Obstacle detected at distance of {self.min_distance:.3f} ")
         else:
             self.obstacle_detected = False
 
@@ -115,7 +115,7 @@ class Explorer:
         # if robot detected within a certain threshold distance
         if self.min_side_distance < 0.35:
             if not self.obstacle_detected:
-                rospy.loginfo('Obstacle edge detected')
+                rospy.loginfo(f"Obstacle edge detected at distance of {self.min_side_distance:.3f}")
                 self.obstacle_detected = True
             self.side = True
         else:
@@ -129,9 +129,9 @@ class Explorer:
 
     def handle_obstacle(self):
         # adjusting linear velocity depending on obstacle distance
-        if self.min_distance < 0.30 or self.min_side_distance < 0.05:
+        if self.min_distance < 0.40 or self.min_side_distance < 0.2:
             self.vel.linear.x = 0.0
-        elif self.min_distance < 0.4:
+        elif self.min_distance < 0.5:
             self.vel.linear.x = 0.15
         else:
             self.vel.linear.x = 0.20
@@ -154,12 +154,40 @@ class Explorer:
         if self.side:
             self.rotation_direction = -1 if self.min_side_position < 0 else 1
 
-            if self.min_side_distance < 0.2:
+            if self.min_side_distance < 0.3:
                 self.vel.angular.z = 0.2 * self.rotation_direction
-            elif self.min_side_distance < 0.3:
+            elif self.min_side_distance < 0.4:
                 self.vel.angular.z = 0.2 * self.rotation_direction
             else:
                 self.vel.angular.z = 0.5 * self.rotation_direction
+        
+    """
+    ------------------------
+    implementing the levey flight search strategy 
+    ------------------------
+    """
+
+    def levy_flight_step(self):
+        # Probability of taking a long jump
+        long_jump_prob = 0.1  # 10% chance of a long jump
+        max_long_jump = 0.26  # Maximum velocity for long jumps
+        normal_step = 0.2  # Normal step velocity
+
+
+        # Randomly decide if this move will be a long jump or a normal step
+        if random.random() < long_jump_prob:
+            # Long jump
+            step_length = max_long_jump
+        else:
+            # Normal step
+            step_length = normal_step
+
+        # Apply the step length to the linear velocity
+        self.vel.linear.x = step_length
+
+        # Introduce randomness in angular velocity for direction change
+        self.vel.angular.z = random.uniform(-1, 1) * self.rotation_direction
+
 
 
     """
@@ -180,12 +208,17 @@ class Explorer:
     def move(self):
         # this is where to put the algorithm to determine the robot's navigation path
         #            (currently it just randomly navigates)
-        if not self.obstacle_detected:
+        '''if not self.obstacle_detected:
             self.vel.linear.x = self.DEFAULT_VEL
-            self.vel.angular.z = 0.2 * self.rotation_direction
+            # self.vel.angular.z = 0.2 * self.rotation_direction
         # an obstacle has been encountered, now go to the handle_obstacle() function
         else:
+            self.handle_obstacle()'''
+        if not self.obstacle_detected:
+            self.levy_flight_step()
+        else:
             self.handle_obstacle()
+        
 
 
     """
