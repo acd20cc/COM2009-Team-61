@@ -94,6 +94,7 @@ class Explorer:
         value = int(value * (10**precision))
         return float(value) / (10**precision)
 
+    #removes zero values in an array
     def no_zero_min(self, arc):
         for i in range(len(arc)):
             if (arc[i] < 0.0001):
@@ -219,6 +220,7 @@ class Explorer:
             self.cmd_vel_pub.publish(self.vel)
             rospy.sleep(self.DEFAULT_ANGULAR_VEL)
 
+    #checks in obstacle(wall in this case) is infront and reacts appropriately
     def handle_wall(self):
         if self.min_distance < 0.37:
             self.vel.linear.x = 0.0
@@ -232,13 +234,16 @@ class Explorer:
             self.rotation_direction *= -1
         self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * self.rotation_direction
 
+    #follows the side of arena
     def follow_side(self, req_dist):
+        #checks if wall is gone, means either too far from wall or it has gone around plank
+        #obstacle. effectively does a u turn if it has gone around a plank
         self.wall_gone(req_dist)
         self.vel.linear.x = self.DEFAULT_VEL
         side_arc = np.array(self.left_side_arc[::-1] + self.right_side_arc[::-1])
-        #side = self.is_lr_side(self.left_side_arc, self.right_side_arc)
-        ##side_arc = self.no_zero_min(side_arc)
         self.min_side_distance = side_arc.min()
+
+        #keeps required distance from wall
         if(self.facing == "Left"):
             if (self.min_side_distance < req_dist):
                 self.vel.angular.z = self.DEFAULT_ANGULAR_VELV2 * -0.3
@@ -249,17 +254,20 @@ class Explorer:
                 self.vel.angular.z = self.DEFAULT_ANGULAR_VELV2 * 0.3
             if (self.min_side_distance > req_dist):
                 self.vel.angular.z = self.DEFAULT_ANGULAR_VELV2 * -0.3
-        #if accidently accelerating away from wall
+        
+        #if accidently accelerating away from wall it slows down
         if (self.min_side_distance > 1.3*req_dist):
             self.vel.linear.x = self.DEFAULT_VEL * 0.7
 
         self.handle_wall()
+        #if no wall it does extreme turn
         if(self.wall == False):
             self.vel.linear.x = 0.14
             if(self.facing == "Left"):
                 self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.8
             else:
                 self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.8
+        #useless right now
         if (self.edge):
             self.handle_corner()
 
@@ -275,6 +283,8 @@ class Explorer:
         #            (in correspondance to the robot)
 
         self.min_side_distance = side_arc.min() # min distance to an obstacle
+
+        #take front-facing side data
         self.front_half_left = np.array(self.left_side_arc[0:14]).min()
         self.front_half_right = np.array(self.right_side_arc[-14:]).min()
 
