@@ -60,6 +60,7 @@ class Explorer:
         self.process_front_arc(scan_data.ranges)
         self.process_side_arc(scan_data.ranges)
 
+
     # replacing all the zeros in the arry with an arbitary num 
     def no_zero_min(self, arc):
         for i in range(len(arc)):
@@ -154,6 +155,7 @@ class Explorer:
         elif self.min_distance < 0.5:
             self.vel.linear.x = 0.15
         else:
+
             self.vel.linear.x = 0.22
 
         # when the robot detect's that it is near the edge of the arena
@@ -172,7 +174,9 @@ class Explorer:
 
         # ajust angular velocity if obstacles are detected on the side
         if self.side:
+
             self.rotation_direction = -0.8 if self.min_side_position < 0 else 0.8
+
             if self.min_side_distance < 0.5:
                 self.vel.angular.z = 0.2 * self.rotation_direction
             elif self.min_side_distance < 0.6:
