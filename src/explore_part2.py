@@ -28,7 +28,7 @@ from sensor_msgs.msg import LaserScan
 class Explorer:
     TASK_TIME_SEC = 90.0
     DEFAULT_VEL = 0.26
-    DEFAULT_ANGULAR_VEL = 0.7
+    DEFAULT_ANGULAR_VEL = 0.9
 
     def __init__(self):
         self.node_name = 'explore_12zones_node'
@@ -36,7 +36,7 @@ class Explorer:
 
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size = 10)
         self.laser_sub = rospy.Subscriber('/scan', LaserScan, self.laser_callback)
-        self.rate = rospy.Rate(30)  # 30Hz
+        self.rate = rospy.Rate(10)  # 10Hz
         self.ctrl_c = False
         
         self.vel = Twist()
@@ -60,6 +60,14 @@ class Explorer:
         self.process_front_arc(scan_data.ranges)
         self.process_side_arc(scan_data.ranges)
 
+    # replacing all the zeros in the arry with an arbitary num 
+    def no_zero_min(self, arc):
+        for i in range(len(arc)):
+            if (arc[i] < 0.0001):
+                arc[i] = 2
+            #print(arc[i])
+        return arc
+
 
     # front arc refers to the 'x' coordinate
     def process_front_arc(self, ranges):
@@ -71,7 +79,10 @@ class Explorer:
 
         # calculating positions/angles of nearby obstacles 
         #            (in correspondance to the robot)
+        front_arc = self.no_zero_min(front_arc)
+        
         self.min_distance = front_arc.min() # min distance to an obstacle
+
         arc_angles = np.arange(-30, 31)
         self.closest_object_position = arc_angles[np.argmin(front_arc)]
         left_edge_closest = np.array(front_arc[0:5]).min()
@@ -80,14 +91,17 @@ class Explorer:
         # if obstacle is within certain distance, randomly change robot's direction
         if self.min_distance < 0.6:
             if not self.obstacle_detected:
-                self.rotation_direction = random.choice([1, -1])
+                self.rotation_direction = 1
+                #self.rotation_direction = random.choice([1, -1])
                 self.obstacle_detected = True
                 rospy.loginfo(f"Obstacle detected at distance of {self.min_distance:.3f} ")
         else:
             self.obstacle_detected = False
 
+        # handle 0 (ignore it)
+
         # if robot aprroaching the edge of the arena, randomly change robot's direction
-        if left_edge_closest < 0.8 and right_edge_closest < 0.8:
+        if left_edge_closest < 0.3 and right_edge_closest < 0.3:
             if left_edge_closest < right_edge_closest:
                 self.rotation_direction = -1
             else:
@@ -96,6 +110,8 @@ class Explorer:
             self.obstacle_detected = True
         else:
             self.edge = False
+
+        # detects edge turn 90 degrees
 
 
     # the side arc refers to the 'y' coordinate
@@ -108,12 +124,16 @@ class Explorer:
 
         # calculating positions/angles of nearby obstacles 
         #            (in correspondance to the robot)
+
+        side_arc = self.no_zero_min(side_arc)
+
         self.min_side_distance = side_arc.min() # min distance to an obstacle
+        print("testest123: ", self.min_side_distance)
         side_arc_angles = np.arange(-50, 51)
         self.min_side_position = side_arc_angles[np.argmin(side_arc)]
 
         # if robot detected within a certain threshold distance
-        if self.min_side_distance < 0.35:
+        if self.min_side_distance < 0.5:
             if not self.obstacle_detected:
                 rospy.loginfo(f"Obstacle edge detected at distance of {self.min_side_distance:.3f}")
                 self.obstacle_detected = True
@@ -134,7 +154,7 @@ class Explorer:
         elif self.min_distance < 0.5:
             self.vel.linear.x = 0.15
         else:
-            self.vel.linear.x = 0.20
+            self.vel.linear.x = 0.22
 
         # when the robot detect's that it is near the edge of the arena
         #            (for this we use angular velocity instead)
@@ -152,11 +172,10 @@ class Explorer:
 
         # ajust angular velocity if obstacles are detected on the side
         if self.side:
-            self.rotation_direction = -1 if self.min_side_position < 0 else 1
-
-            if self.min_side_distance < 0.3:
+            self.rotation_direction = -0.8 if self.min_side_position < 0 else 0.8
+            if self.min_side_distance < 0.5:
                 self.vel.angular.z = 0.2 * self.rotation_direction
-            elif self.min_side_distance < 0.4:
+            elif self.min_side_distance < 0.6:
                 self.vel.angular.z = 0.2 * self.rotation_direction
             else:
                 self.vel.angular.z = 0.5 * self.rotation_direction
@@ -231,6 +250,7 @@ class Explorer:
     """
 
     def explore(self):
+        rate = rospy.Rate(10) 
         start = time() # record time it takes for robot to complete the task
 
         while not self.ctrl_c and self.timer <= self.TASK_TIME_SEC:
