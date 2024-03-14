@@ -36,7 +36,7 @@ class Explorer:
     DEFAULT_ANGULAR_VELV2 = 0.1
     ARENA_HORIZONTAL = 3.4
     ARENA_VERTICAL = 3.4
-    REQ_DIST = 0.35
+    REQ_DIST = 0.37
 
     def __init__(self):
         self.node_name = 'explore_12zones_node'
@@ -131,6 +131,15 @@ class Explorer:
                 rospy.loginfo(f"Distant obstacle detected at distance of {self.min_distance:.3f} ")
         else:
             self.distant_obstacle = False
+
+        if self.min_distance < 0.5:
+            if not self.obstacle_detected:
+                self.rotation_direction = 1
+                self.obstacle_detected = True
+                rospy.loginfo(f"Obstacle detected at distance of {self.min_distance:.3f} ")
+        else:
+            self.obstacle_detected = False
+        
 
     def find_side(self):
         self.vel.linear.x = self.DEFAULT_VEL
@@ -234,13 +243,12 @@ class Explorer:
         if self.min_distance < 0.39:
             self.vel.linear.x = 0.0
             self.rotation_direction = 1
+            if(self.facing == "Left"):
+                self.rotation_direction *= -1
+            self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * self.rotation_direction
         elif self.min_distance < 0.6:
-            self.vel.linear.x = 0.18
-            self.rotation_direction = 0.15
+            self.vel.linear.x = 0.22
         #rotate other way if moving with left side against wall
-        if(self.facing == "Left"):
-            self.rotation_direction *= -1
-        self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * self.rotation_direction
 
     #follows the side of arena
     def follow_side(self, req_dist):
@@ -254,30 +262,34 @@ class Explorer:
         #keeps required distance from wall
         if(self.facing == "Left"):
             if (self.side_front_half_left < req_dist):
-                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.05
-            if (self.side_front_half_left > 1.05 * req_dist):
-                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.06
+                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.18
+                #more angular rotation if closer to arena side
+                if(self.side_front_half_left < 0.75 * req_dist):
+                    self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.25
+            if (self.side_front_half_left > req_dist):
+                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.18
+                #if accidently accelerating away from wall it slows down and turns more
+                if (self.min_side_distance > 1.4 * req_dist):
+                    self.vel.linear.x = self.DEFAULT_VEL * 0.8
+                    self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.25
+
+        #for when robot's right side faces wall
         else:
             if (self.side_front_half_right < req_dist):
-                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.05
-            if (self.side_front_half_right > 1.05 * req_dist):
-                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.06
-        #if accidently accelerating away from wall it slows down and turns more
-        
-        if (self.min_side_distance > 1.5*req_dist):
-            self.vel.linear.x = self.DEFAULT_VEL * 0.8
-            print("calledcalledcalled")
-            if(self.facing == "Left"):
-                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.09
-            else:
-                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.09
-        
-
+                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.18
+                #more angular rotation if closer to arena side
+                if(self.side_front_half_right < 0.75 * req_dist):
+                    self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.25
+            if (self.side_front_half_right > req_dist):
+                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.18
+                if (self.min_side_distance > 1.4 * req_dist):
+                    self.vel.linear.x = self.DEFAULT_VEL * 0.8
+                    self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.25
 
         self.handle_wall()
         #if no wall it does extreme turn
         if(self.wall == False):
-            self.vel.linear.x = 0.20
+            self.vel.linear.x = 0.21
             if(self.facing == "Left"):
                 self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.75
             else:
@@ -312,7 +324,7 @@ class Explorer:
         if(not self.atSide):
             self.at_side(self.left_side_arc, self.right_side_arc, self.REQ_DIST)
         # if robot detected within a certain threshold distance
-        if self.min_side_distance < 0.30:
+        if self.min_side_distance < 0.35:
             if not self.obstacle_detected:
                 rospy.loginfo(f"Obstacle edge detected at distance of {self.min_side_distance:.3f}")
                 self.obstacle_detected = True
