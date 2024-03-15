@@ -36,7 +36,7 @@ class Explorer:
     DEFAULT_ANGULAR_VELV2 = 0.1
     ARENA_HORIZONTAL = 3.4
     ARENA_VERTICAL = 3.4
-    REQ_DIST = 0.37
+    REQ_DIST = 0.38
 
     def __init__(self):
         self.node_name = 'explore_12zones_node'
@@ -163,7 +163,7 @@ class Explorer:
             self.obstacle_detected = False
 
         # if robot aprroaching the edge of the arena, randomly change robot's direction
-        if self.left_edge_closest < 0.33 and self.right_edge_closest < 0.33:
+        if self.left_edge_closest < 0.30 and self.right_edge_closest < 0.30:
             if self.left_edge_closest < self.right_edge_closest:
                 self.rotation_direction = -1
             else:
@@ -175,11 +175,6 @@ class Explorer:
 
     #returns true or false if an obstacle is the side of arena
     def at_side(self, left_side, right_side, req_dist):
-        if ((np.absolute(self.posx) > 1.70 - req_dist) | (np.absolute(self.posx) > 1.70 - req_dist)):
-            self.atSide = True
-            self.facing = self.is_lr_side(self.left_side_arc, self.right_side_arc)
-        else: 
-            self.atSide = False
         left_average = 0
         right_average = 0
         for i in left_side:
@@ -188,14 +183,21 @@ class Explorer:
             right_average += i
         left_average /= len(left_side)
         right_average /= len(right_side)
-        if ((left_average < 1.15*req_dist)):
+        #
+        if ((left_average < 1.3*req_dist)):
             self.atSide = True
             self.facing = self.is_lr_side(self.left_side_arc, self.right_side_arc)
-        else:
-            self.atSide = False
-        if ((right_average < 1.15*req_dist)):
+            print("using lside detcted")
+        elif ((right_average < 1.3*req_dist)):
             self.atSide = True
             self.facing = self.is_lr_side(self.left_side_arc, self.right_side_arc)
+            print("using rside detcted")
+        elif (((np.absolute(self.posx)) > 1.75 - req_dist) | ((np.absolute(self.posy)) > 1.75 - req_dist)):
+            print(self.posx)
+            print(self.posy)
+            self.atSide = True
+            self.facing = self.is_lr_side(self.left_side_arc, self.right_side_arc)
+            print("using odom detcted")
         else:
             self.atSide = False
 
@@ -249,6 +251,14 @@ class Explorer:
         elif self.min_distance < 0.6:
             self.vel.linear.x = 0.22
         #rotate other way if moving with left side against wall
+            
+    def handle_wall_special(self):
+        if(self.min_distance < 0.30):
+            self.vel.linear.x = 0.0
+            self.rotation_direction = 1
+            if(self.facing == "Left"):
+                self.rotation_direction *= -1
+            self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * self.rotation_direction
 
     #follows the side of arena
     def follow_side(self, req_dist):
@@ -289,11 +299,12 @@ class Explorer:
         self.handle_wall()
         #if no wall it does extreme turn
         if(self.wall == False):
-            self.vel.linear.x = 0.21
+            self.vel.linear.x = 0.19
             if(self.facing == "Left"):
-                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.75
+                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 0.9
             else:
-                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.75
+                self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.9
+        self.handle_wall_special()
         #useless right now
         if (self.edge):
             self.handle_corner()
@@ -302,8 +313,8 @@ class Explorer:
     def process_side_arc(self, ranges):
         # process data from LiDAR data into an array
         #             (taken from leturer's notes)
-        self.left_side_arc = self.no_zero_min(ranges[70:121])
-        self.right_side_arc = self.no_zero_min(ranges[250:300])
+        self.left_side_arc = self.no_zero_min(np.array(ranges[70:120]))
+        self.right_side_arc = self.no_zero_min(np.array(ranges[250:300]))
         side_arc = np.array(self.left_side_arc[::-1] + self.right_side_arc[::-1])
 
         # calculating positions/angles of nearby obstacles 
@@ -318,7 +329,7 @@ class Explorer:
         self.side_front_half_left = np.array(self.left_side_arc[0:20]).min()
         self.side_front_half_right = np.array(self.right_side_arc[-20:]).min()
 
-        side_arc_angles = np.arange(-50, 51)
+        side_arc_angles = np.arange(-50, 50)
         self.min_side_position = side_arc_angles[np.argmin(side_arc)]
 
         if(not self.atSide):
@@ -340,6 +351,7 @@ class Explorer:
 
     def handle_obstacle(self):
         #adjust velocity and angular vel if distant object detected
+        """
         if self.distant_obstacle:
             self.vel.linear.x *= 0.8
             if(self.left_wider_edge_closest > self.right_wider_edge_closest):
@@ -348,12 +360,13 @@ class Explorer:
                 self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -0.15
         else:
             self.vel.linear.x = self.DEFAULT_VEL
+            """
 
         # adjusting linear velocity depending on obstacle distance
-        if self.min_distance < 0.35 or self.min_side_distance < 0.2:
+        if self.min_distance < 0.32 or self.min_side_distance < 0.2:
             self.vel.linear.x = 0.0
         elif self.min_distance < 0.6:
-            self.vel.linear.x *= 0.7
+            self.vel.linear.x *= 0.8
 
         # when the robot detect's that it is near the edge of the arena
         #            (for this we use angular velocity instead)
