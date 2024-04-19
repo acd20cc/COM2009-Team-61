@@ -1,0 +1,5 @@
+<launch>
+    <!-- launch file for Task 2 -->
+    <node pkg = "com2009_team61" type = "maze.py" name = "maze_node" output = "screen">
+    </node>
+</launch>
