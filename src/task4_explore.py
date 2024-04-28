@@ -15,7 +15,6 @@ Task 4:
 
 ------------------------
 
-
 Things to do:
 
 """
@@ -34,6 +33,10 @@ import numpy as np
 
 class Explore:
     TASK_TIME_SEC = 180.0
+    DEFAULT_VEL = 0.26
+    DEFAULT_ANGULAR_VEL = 0.8
+    REQ_DIST = 0.38
+
     def __init__(self):
         rospy.init_node('explore_node', anonymous=True)
         self.node_name = rospy.get_name() 
@@ -41,14 +44,14 @@ class Explore:
         self.ctrl_c = False
         self.timer = 0.0 # for timing the tasks length
         
-
         # topics subscribed to
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size = 10)
-        #self.laser_sub = rospy.Subscriber('/scan', LaserScan, self.laser_callback)
-        #self.odometry_sub = rospy.Subscriber('/odom', Odometry, self.odom_cb)
+        self.laser_sub = rospy.Subscriber('/scan', LaserScan, self.laser_callback)
+        self.odometry_sub = rospy.Subscriber('/odom', Odometry, self.odom_cb)
 
         #initalize (variables)
         self.vel = Twist()
+        self.facing = ""
         self.edge = False
         self.side = False
         self.wall = False
@@ -407,6 +410,18 @@ class Explore:
 
     """
     ------------------------
+    implementing the exploration and search strategy 
+    ------------------------
+    """
+
+    """
+    ------------------------
+    take pictures of beacon 
+    ------------------------
+    """
+
+    """
+    ------------------------
     moving the robot according to its state 
     ------------------------
     """
@@ -419,7 +434,7 @@ class Explore:
         if (not self.obstacle_detected) & (not self.atSide):
             #self.find_side()
             #self.levy_flight_step()
-            self.vel.linear.x = 0.05
+            self.vel.linear.x = 0.2
             self.vel.angular.z = 0.0
         if self.atSide:
             self.follow_side(self.REQ_DIST)
