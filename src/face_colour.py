@@ -19,8 +19,9 @@ class FaceColour():
         node_name = "turn_and_face"
         rospy.init_node(node_name)
 
-        self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw",
-            Image, self.camera_callback)
+        #self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw",
+        #   Image, self.camera_callback)
+        rospy.Subscriber("/camera/color/image_raw", Image, self.camera_callback) 
         self.cvbridge_interface = CvBridge()
 
         self.robot_controller = Tb3Move()
@@ -53,17 +54,20 @@ class FaceColour():
             print(e)
         
         height, width, _ = cv_img.shape
-        crop_width = width - 800
-        crop_height = 400
+        crop_width = width - 200
+        crop_height = 200
+        print(height)
+        print(cv_img.shape)
         crop_x = int((width/2) - (crop_width/2))
         crop_y = int((height/2) - (crop_height/2))
 
-        crop_img = cv_img[crop_y:crop_y+crop_height, crop_x:crop_x+crop_width]
+        #crop_img = cv_img[crop_y:crop_y+crop_height, crop_x:crop_x+crop_width]
+        crop_img = cv_img[int(height/3):int((height/2)+(height/4)), 0:width]
         hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
         
         #blue
-        blue_lower = (100, 55, 0)
-        blue_upper = (110, 260, 200)
+        blue_lower = (102, 240, 80)
+        blue_upper = (107, 260, 200)
         blue = (blue_lower, blue_upper)
 
         #yellow
@@ -72,7 +76,7 @@ class FaceColour():
         yellow = (yellow_lower, yellow_upper)
 
         #green
-        green_lower = (75, 110, 0)
+        green_lower = (75, 150, 70)
         green_upper = (92, 260, 150)
         green = (green_lower, green_upper)
 
@@ -84,7 +88,11 @@ class FaceColour():
         #
         #change colour to fit whichever colour is being looked for
         #
-        mask = cv2.inRange(hsv_img, red[0], red[1])
+        mask = cv2.inRange(hsv_img, blue[0], blue[1])
+        #mask = cv2.inRange(hsv_img, yellow[0], yellow[1])
+        #mask = cv2.inRange(hsv_img, green[0], green[1])
+        #mask = cv2.inRange(hsv_img, blue[0], blue[1])
+
 
         res = cv2.bitwise_and(crop_img, crop_img, mask = mask)
 
