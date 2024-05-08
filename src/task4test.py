@@ -58,7 +58,6 @@ class maze:
         self.right_dist = np.array(front_arc[120:150]).min()
         self.front_dist= np.array(front_arc[70:110]).min()
         self.left_dist = np.array(front_arc[30:60]).min()
-
         
     def main(self):
         """
@@ -69,13 +68,12 @@ class maze:
             #print(self.pose_stamp)
             self.pose_stamp.header.frame_id = 'map'
             self.pose_stamp.pose.position.x = -1.4
-            self.pose_stamp.pose.position.y = -0.3
+            self.pose_stamp.pose.position.y = 0.5
             self.pose_stamp.pose.orientation.w = 1.0
-            if(self.published < 10):
+            if(self.published < 20):
                 self.move_base_pub.publish(self.pose_stamp)
                 self.published += 1
-            self.rate.sleep()
-                
+            self.rate.sleep() 
 
 
 if __name__ == '__main__':
