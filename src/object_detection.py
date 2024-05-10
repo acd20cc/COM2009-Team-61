@@ -46,7 +46,7 @@ def camera_cb(img_data):
 
         print(f"Obtained an image of height {height}px and width {width}px.")
 
-        show_and_save_image(cv_img, img_name = "test")
+        show_and_save_image(cv_img, img_name = "50cm_distance")
 
         waiting_for_image = False
 

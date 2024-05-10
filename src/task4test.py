@@ -70,7 +70,7 @@ class task4test:
         self.pose_stamp.header.frame_id = 'map'
         while not self.ctrl_c:
             #if cylinder detected and colour not found before
-            if(self.detect_colour.cylinder_detected and not(self.detect_colour.main_colour in self.cylinders_found)):
+            if(self.detect_colour.cylinder_detected() and not(self.detect_colour.main_colour in self.cylinders_found)):
                 print("Cylinder of colour: " + self.detect_colour.main_colour + " found")
                 self.cylinders_found.append(self.detect_colour.main_colour)
                 self.moving_to_coor = False
@@ -90,7 +90,8 @@ class task4test:
             self.cmd_vel_pub.publish(self.vel)
             for i in range(4):
                 #if it has coordinate and not seen that colour, then go to it
-                if (self.cylinder_coordinates[i] != []) and (not (self.detect_colour.num_to_colour[i] in self.cylinders_found)):
+                c = self.detect_colour.num_to_colour[i]
+                if (self.cylinder_coordinates[c] != []) and (not (c in self.cylinders_found)):
                     self.pose_stamp.pose.position.x = self.cylinder_coordinates[i][0]
                     self.pose_stamp.pose.position.y = self.cylinder_coordinates[i][1]
                     self.pose_stamp.pose.orientation.w = 1.0
@@ -113,6 +114,8 @@ class task4test:
             self.pose_stamp.pose.position.y = (np.random.random_sample() * 4) -2
             self.pose_stamp.pose.orientation.w = 1.0
         if(self.published < 10):
+            print("published rand")
+            print(self.pose_stamp)
             self.move_base_pub.publish(self.pose_stamp)
             self.random_generated = True
             self.published += 1
@@ -124,15 +127,16 @@ class task4test:
         self.turn_rate = ""
         for i in range(4):
             #no coordinates for that colour and colour not fully seen before
-            if((self.cylinder_coordinates[i] == []) and (not (self.detect_colour.num_to_colour[i] in self.cylinders_found))):
+            if((self.cylinder_coordinates[self.detect_colour.num_to_colour[i]] == []) and (not (self.detect_colour.num_to_colour[i] in self.cylinders_found))):
                 #there is recorded estimated distance information for that cylinder colour
+                c = self.detect_colour.num_to_colour[i]
                 if(not (self.detect_colour.cylinder_info[i] == [])):
                     self.colour_turning_to = i
                     self.m00 = self.detect_colour.cylinder_info[i][0]
                     cy = self.detect_colour.cylinder_info[i][2]
                     if self.m00 > self.m00_min:
                         # blob detected
-                        if cy >= 420-60 and cy <= 420+60:
+                        if cy >= 420-100 and cy <= 420+100:
                             self.turn_rate = 'stop'
                         else:
                             self.turn_rate = 'slow'
@@ -152,6 +156,9 @@ class task4test:
         y_dist = distance * np.cos(np.pi - yaw)
         coordinate = [robot_x+x_dist, robot_y+y_dist]
         self.cylinder_coordinates[self.colour_turning_to] = coordinate
+        print()
+        print(coordinate)
+        print()
 
         
 

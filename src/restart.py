@@ -51,6 +51,8 @@ class Nav:
         self.last_yaw = 0.0
         self.position_change = True
 
+        self.min_side_distance = 0
+
         rospy.on_shutdown(self.shutdown)
         rospy.loginfo(f"The '{self.node_name}' node is active...")
     
@@ -170,7 +172,7 @@ class Nav:
             self.cmd_vel_pub.publish(self.vel)
             rospy.sleep(self.DEFAULT_ANGULAR_VEL)
         elif self.closest_object_position > 17:
-            self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * 1
+            self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -1
         elif self.closest_object_position < -17:
             self.vel.angular.z = self.DEFAULT_ANGULAR_VEL * -1
         else:

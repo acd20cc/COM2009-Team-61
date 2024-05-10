@@ -18,12 +18,12 @@ from tb3 import Tb3Move
 class DetectPillar():
 
     def __init__(self):
-        node_name = "detect_colour"
-        rospy.init_node(node_name)
+        # node_name = "detect_colour"
+        # rospy.init_node(node_name)
 
         #self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw",
         #   Image, self.camera_callback)
-        self.camera_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.camera_callback) 
+        #self.camera_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.camera_callback) 
         self.cvbridge_interface = CvBridge()
 
         self.main_colour = ""
@@ -36,7 +36,7 @@ class DetectPillar():
         #dict of colour=>bool of whether a full cylinder found
         self.full_cylinder = {"blue":False, "yellow":False, "green":False, "red":False}
         #dict of cylinder information (moments, approx distance)
-        self.cylinder_info = {}
+        self.cylinder_info = {0:[],1:[],2:[],3:[]}
 
     def shutdown_ops(self):
         cv2.destroyAllWindows()
@@ -103,21 +103,24 @@ class DetectPillar():
         #get biggest found area for the main colour contour
         biggest_area = 0
         area_cnt_arr = []
-        for cnt in contour_array[self.colour_to_num[self.main_colour]]:
-            area = cv2.contourArea(cnt)
-            if(area >= biggest_area):
-                area_cnt_arr = [area, cnt]
-                biggest_area = area
+        if(self.main_colour != ""):
+            for cnt in contour_array[self.colour_to_num[self.main_colour]]:
+                area = cv2.contourArea(cnt)
+                if(area >= biggest_area):
+                    area_cnt_arr = [area, cnt]
+                    biggest_area = area
 
-        #if area is bigger than a certain amount, the robot is seeing the full cylinder
-        if(area_cnt_arr[0] > 500):
-            self.full_cylinder[self.main_colour] = True
-            #find and set moments for the full cylinder
-            M = cv2.moments(area_cnt_arr[1])
-            m0 = (M['m00'] + 1e-5)
-            cx = int(M['m10']/(M['m00'] + 1e-5))
-            cy = int(M['m01']/(M['m00'] + 1e-5))
-            self.cylinder_info[self.colour_to_num[self.main_colour]] = [m0,cx,cy]
+            #if area is bigger than a certain amount, the robot is seeing the full cylinder
+            if(area_cnt_arr[0] > 800):
+                self.full_cylinder[self.main_colour] = True
+                #find and set moments for the full cylinder
+                M = cv2.moments(area_cnt_arr[1])
+                m0 = (M['m00'] + 1e-5)
+                cx = int(M['m10']/(M['m00'] + 1e-5))
+                cy = int(M['m01']/(M['m00'] + 1e-5))
+                self.cylinder_info[self.colour_to_num[self.main_colour]] = [m0,cx,cy]
+            else:
+                self.full_cylinder[self.main_colour] = False
 
         #
         #for original image
