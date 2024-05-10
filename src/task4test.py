@@ -87,6 +87,7 @@ class task4test:
                 self.vel.linear.x = 0.0
                 self.vel.angular.z = (0.0)
                 self.est_coordinate()
+            self.cmd_vel_pub.publish(self.vel)
             for i in range(4):
                 #if it has coordinate and not seen that colour, then go to it
                 if (self.cylinder_coordinates[i] != []) and (not (self.detect_colour.num_to_colour[i] in self.cylinders_found)):
