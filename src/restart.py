@@ -24,7 +24,7 @@ lidar = waffle.Lidar(debug = True)
 class Nav:
     TASK_TIME_SEC = 180.0
     DEFAULT_VEL = 0.26
-    DEFAULT_ANGULAR_VEL = 0.9
+    DEFAULT_ANGULAR_VEL = 1.2
 
 
     def __init__(self):
@@ -50,6 +50,9 @@ class Nav:
         self.last_posy = 0.0
         self.last_yaw = 0.0
         self.position_change = True
+        self.angle_change = 0 
+        self.side_to_turn = "none"
+        self.greatest_subpart = ""
 
         self.min_side_distance = 0
 
@@ -198,12 +201,15 @@ class Nav:
         if not self.obstacle_detected:
             if not self.position_change:                
                 lidar.subsets.show()
-                
+                self.turn_at_velocity(self.DEFAULT_ANGULAR_VEL, self.angle_change)
+                rospy.info("trying to turn without obstcale in front")
             else:
                 self.random_step()  # Perform random step if position changed recently
         else:
             if not self.position_change:
                 lidar.subsets.show()
+                self.turn_at_velocity(self.DEFAULT_ANGULAR_VEL, self.angle_change)
+                rospy.loginfo("CHECK THIS OUT !!!!!!!!!!")
             else:
                 self.handle_obstacle()  # Handle obstacle if detected
 
@@ -217,8 +223,6 @@ class Nav:
         long_jump_prob = 0.1  # 10% chance of a long jump
         max_linear = 0.26  # Maximum velocity for long jumps
         angle = 0 
-
-
         if random.random() < long_jump_prob:
             angle = random.uniform(-1.82, 1.82) * self.rotation_direction
         else:
@@ -258,47 +262,32 @@ class Nav:
     def check_position_change(self):
         posx_diff = abs(self.posx - self.last_posx)
         posy_diff = abs(self.posy - self.last_posy)
-        angle_change_array = [0, 30, 50, 78, 103, 30, 50, 78, 103] 
-        side = "none"
-
+        
         # Check if absolute position difference is less than 0.5 for both x and y
         if posx_diff < 0.5 and posy_diff < 0.5:
-            self.vel.linear.x = 0
-            self.vel.angular.z = 0
             rospy.loginfo("Difference in position is less than 0.5. Robot barely changed its position.")
             self.position_change = False 
 
-            # Call get_all_distances to get all distances and their corresponding subparts
-            distances, subparts = lidar.get_all_distances_with_subparts()
+           
+    def find_greatest_subset(self):
+        angle_change_array = [0, 30, 50, 78, 103, 30, 50, 78, 103] 
 
-            # Initialize variables to hold the greatest distance and its corresponding subpart
-            greatest_distance = float('-inf')
-            greatest_subpart = ""
-            angle_change = 0 
+         # Call get_all_distances to get all distances and their corresponding subparts
+        distances, subparts = lidar.get_all_distances_with_subparts()
 
-            # Loop through the distances and subparts arrays to find the greatest distance and its corresponding subpart
-            for i, distance in enumerate(distances):
-                if distance > greatest_distance:
-                    greatest_distance = distance
-                    greatest_subpart = subparts[i]
-                    angle_change = angle_change_array[i]
-                    if i > 3:
-                        side = "right"
+        # Initialize variables to hold the greatest distance and its corresponding subpart
+        greatest_distance = float('-inf')
 
-
-            # Check if the greatest distance is less than 0.5
-            if greatest_distance < 0.5:
-                rospy.loginfo("Greatest distance very close to obstcale.")
-
-            # Print the greatest distance and its corresponding subpart
-            rospy.loginfo(f"Greatest distance: {greatest_distance}, Subpart: {greatest_subpart}")
-
-            # Turn the robot using the calculated angle change
-            if side == "right":
-                self.turn_at_velocity(-self.DEFAULT_ANGULAR_VEL, angle_change)
-                
-            else:
-                self.turn_at_velocity(self.DEFAULT_ANGULAR_VEL, angle_change)
+        # Loop through the distances and subparts arrays to find the greatest distance and its corresponding subpart
+        for i, distance in enumerate(distances):
+            if distance > greatest_distance:
+                greatest_distance = distance
+                self.greatest_subpart = subparts[i]
+                self.angle_change = angle_change_array[i]
+                if i > 3:
+                    self.side_to_turn = "right"
+                else: 
+                    self.side_to_turn = "left"
 
     def turn_at_velocity(self, angular_velocity, angle_change):
 
@@ -309,8 +298,12 @@ class Nav:
         end_time = start_time + duration  # Calculate the end time
 
         # Create a Twist message to publish velocity commands
+        # Set the angular velocity
         twist_msg = Twist()
-        twist_msg.angular.z = angular_velocity  # Set the angular velocity
+        if self.side_to_turn == "right":
+            twist_msg.angular.z = -angular_velocity 
+        else: 
+            twist_msg.angular.z = angular_velocity 
 
         # Publish velocity commands until the desired angle change is reached or an obstacle is detected
         while rospy.get_time() < end_time and not self.obstacle_detected:
@@ -319,10 +312,9 @@ class Nav:
 
         # Stop the robot after the desired angle change or obstacle detection
         twist_msg.angular.z = 0.0  # Set angular velocity to zero
+        self.position_change = True
         self.cmd_vel_pub.publish(twist_msg)  # Publish the stop command
 
-        # Calculate the time taken for the turn
-        time_taken = abs(angle_change / angular_velocity)
 
     
     """
