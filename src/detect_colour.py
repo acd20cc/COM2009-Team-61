@@ -23,7 +23,7 @@ class DetectPillar():
 
         #self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw",
         #   Image, self.camera_callback)
-        #self.camera_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.camera_callback) 
+        #self.camera_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.camera_callback)
         self.cvbridge_interface = CvBridge()
 
         self.main_colour = ""
@@ -37,6 +37,8 @@ class DetectPillar():
         self.full_cylinder = {"blue":False, "yellow":False, "green":False, "red":False}
         #dict of cylinder information (moments, approx distance)
         self.cylinder_info = {0:[],1:[],2:[],3:[]}
+        #CHANGE FOR IRL ROBOT
+        self.camera_resolution = [1920, 1080]
 
     def shutdown_ops(self):
         cv2.destroyAllWindows()
@@ -53,30 +55,55 @@ class DetectPillar():
         crop_height = 200
         crop_x = int((width/2) - (crop_width/2))
         crop_y = int((height/2) - (crop_height/2))
+
+        cv2.imshow('image', cv_img)
+        cv2.waitKey(1)
         
         hsv_orig_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2HSV)
         crop_img = cv_img[int(height/3):int((height/2)+(height/4)), 0:width]
         hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
         
+        #SIMULATION COLOURS:
         #blue
-        blue_lower = (102, 240, 80)
-        blue_upper = (107, 260, 200)
+        blue_lower = (115, 224, 100)
+        blue_upper = (130, 255, 255)
         blue = (blue_lower, blue_upper)
 
         #yellow
-        yellow_lower = (18, 170, 50)
-        yellow_upper = (30, 260, 200)
+        yellow_lower = (25, 90, 100)
+        yellow_upper = (35, 260, 255)
         yellow = (yellow_lower, yellow_upper)
 
         #green
-        green_lower = (75, 150, 70)
-        green_upper = (92, 260, 150)
+        green_lower = (50,105,0)
+        green_upper = (65,260,255)
         green = (green_lower, green_upper)
 
         #red
-        red_lower = (-2, 190, 50)
-        red_upper = (6, 260, 255)
+        red_lower = (-5,130,0)
+        red_upper = (7,260,255)
         red = (red_lower, red_upper)
+        
+        #IRL COLOURS:
+        # #blue
+        # blue_lower = (102, 240, 80)
+        # blue_upper = (107, 260, 200)
+        # blue = (blue_lower, blue_upper)
+
+        # #yellow
+        # yellow_lower = (18, 170, 50)
+        # yellow_upper = (30, 260, 200)
+        # yellow = (yellow_lower, yellow_upper)
+
+        # #green
+        # green_lower = (75, 150, 70)
+        # green_upper = (92, 260, 150)
+        # green = (green_lower, green_upper)
+
+        # #red
+        # red_lower = (-2, 190, 50)
+        # red_upper = (6, 260, 255)
+        # red = (red_lower, red_upper)
 
         #set mask ranges for each colour
         blue_mask = cv2.inRange(hsv_img, blue[0], blue[1])
@@ -111,7 +138,7 @@ class DetectPillar():
                     biggest_area = area
 
             #if area is bigger than a certain amount, the robot is seeing the full cylinder
-            if(area_cnt_arr[0] > 800):
+            if(area_cnt_arr[0] > 25000):
                 self.full_cylinder[self.main_colour] = True
                 #find and set moments for the full cylinder
                 M = cv2.moments(area_cnt_arr[1])
@@ -154,12 +181,14 @@ class DetectPillar():
         col_approx_area_dict = {0:[],1:[],2:[],3:[]}
         counter = 0
         for area_cnt in colour_cnt_arr:
+            colour = self.num_to_colour[counter]
             #if colour not detected (no contours for it)
             if(area_cnt == []):
+                self.cylinder_info[counter] = []
                 counter+=1
                 continue
             #dont do distance calc if full cylinder is seen for that colour
-            if(self.num_to_colour[counter] == self.main_colour):
+            if(self.full_cylinder[colour]):
                 continue
             #if area greater than some threshold
             if(area_cnt[0] >= 50):
@@ -189,7 +218,7 @@ class DetectPillar():
                 cy = int(M['m01']/M['m00'])
                 #save found moments and approx distance for each colour detected in a dict to
                 #be accessed and acted on outside the class
-                self.cylinder_info[counter] = [m0,cx,cy,approx_dist]
+                self.cylinder_info[counter] = [m0,cx,cy,approx_dist(average_width)]
 
                 #cv2.rectangle(hsv_orig_img,(x,y),(x+w,y+h),(0,255,0),2)
                 #print(cnt_area_dict[1])
@@ -210,12 +239,12 @@ class DetectPillar():
             if(self.full_cylinder[i]):
                 return True
         return False
+
 #approximates distance of the cylinder based on its observed width
-#SET THE APPROPRIATE DISTANCE=>PIXEL VALUES AFTER DOING NEW MEASUREMENTS
 def approx_dist(width):
     #set the base known relationship of distance to pixel width of cylinder
-    base_distance = 0.15 #in metres
-    base_pixels = 200 #in pixels
+    base_distance = 1 #in metres
+    base_pixels = 125 #in pixels
     ratio = base_pixels/width
     distance = base_distance * ratio
     return distance

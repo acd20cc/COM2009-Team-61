@@ -3,8 +3,11 @@
     <arg name="move_forward_only" default="false"/>
 
     <!-- mapping node initialised -->
-    <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" required="true" args="odom_frame:= odom2">
+    <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" required="true">
         <param name="linearUpdate" value="0.15"/>
+        <param name="xmax" value="5"/>
+        <param name="ymax" value="5"/>
+        <param name="maxUrange" value="10"/>
     </node>
 
     <!-- to save map to a file -->
@@ -18,6 +21,9 @@
     <arg name="initial_pose_x" default="0.0"/>
     <arg name="initial_pose_y" default="0.0"/>
     <arg name="initial_pose_a" default="0.0"/>
+    <arg name="cmd_vel_topic" default="/cmd_vel"/>
+    <arg name="odom_topic" default="odom"/>
+    <arg name="use_map_topic" default="true"/>
 
     <!-- Turtlebot3 Bringup -->
     <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
@@ -30,16 +36,27 @@
         <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
         <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
         <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
+        <arg name="use_map_topic" value="$(arg use_map_topic)"/>
     </include> -->
 
-    <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
-        <param name="local_costmap/obstacle_layer/inflation_radius" value="0.02" />
-        <param name="global_costmap/obstacle_layer/inflation_radius" value="0.02" />
-        <param name="local_costmap/obstacle_layer/cost_scaling_factor" value="1.0" />
-        <param name="global_costmap/obstacle_layer/cost_scaling_factor" value="1.0" />
+    <!-- <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
         <arg name="model" value="$(arg model)" />
         <arg name="move_forward_only" value="$(arg move_forward_only)"/>
-    </include>
+    </include> -->
+
+     <!-- move_base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <rosparam file="$(find com2009_team61)/launch/cost/costmap_common_params_$(arg model).yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find com2009_team61)/launch/cost/costmap_common_params_$(arg model).yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find com2009_team61)/launch/cost/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find com2009_team61)/launch/cost/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find com2009_team61)/launch/cost/move_base_params.yaml" command="load" />
+    <rosparam file="$(find com2009_team61)/launch/cost/dwa_local_planner_params_$(arg model).yaml" command="load" />
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <remap from="odom" to="$(arg odom_topic)"/>
+    <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
+  </node>
 
     <!-- rviz -->
     <node pkg="rviz" type="rviz" name="rviz" required="true"
