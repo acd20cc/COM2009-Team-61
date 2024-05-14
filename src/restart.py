@@ -5,6 +5,10 @@ import random
 import numpy as np
 import waffle 
 
+# Import all the necessary ROS message types:
+from sensor_msgs.msg import Image
+import numpy as np
+
 
 from time import time
 from geometry_msgs.msg import Twist
@@ -12,7 +16,7 @@ from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 from math import degrees
-
+from detect_colour import DetectPillar
 node_name = "navigation"
 
 rospy.init_node(node_name, anonymous=True)
@@ -20,6 +24,7 @@ rate = rospy.Rate(10) # hz
 rospy.loginfo(f"{node_name}: Initialised.")
 
 lidar = waffle.Lidar(debug = True)
+colour_detect = DetectPillar()
 
 class Nav:
     TASK_TIME_SEC = 180.0
@@ -34,6 +39,8 @@ class Nav:
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         self.laser_sub = rospy.Subscriber('/scan', LaserScan, self.laser_callback)
         self.odometry_sub = rospy.Subscriber('/odom', Odometry, self.odom_cb)
+        rospy.Subscriber("/camera/color/image_raw", Image, colour_detect.camera_callback) 
+        
         self.rate = rospy.Rate(10)  # 10Hz
         self.ctrl_c = False
 
@@ -315,7 +322,12 @@ class Nav:
         self.position_change = True
         self.cmd_vel_pub.publish(twist_msg)  # Publish the stop command
 
-
+    """
+    ------------------------
+    taking the pictures
+    ------------------------
+    """
+    
     
     """
     ------------------------
@@ -334,8 +346,8 @@ class Nav:
             self.cmd_vel_pub.publish(self.vel)  # Publish velocity commands
             self.rate.sleep()
 
-            # Check odometry difference every 10 seconds
-            if time() - self.last_check_time >= 10:
+            # Check odometry difference every 5 seconds
+            if time() - self.last_check_time >= 5:
                 self.check_position_difference()  # Call the function to check position difference
                 self.check_position_change()
 
