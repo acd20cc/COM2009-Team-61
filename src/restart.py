@@ -209,7 +209,7 @@ class Nav:
             if not self.position_change:                
                 lidar.subsets.show()
                 self.turn_at_velocity(self.DEFAULT_ANGULAR_VEL, self.angle_change)
-                rospy.info("trying to turn without obstcale in front")
+                rospy.loginfo("trying to turn without obstcale in front")
             else:
                 self.random_step()  # Perform random step if position changed recently
         else:
@@ -218,6 +218,7 @@ class Nav:
                 self.turn_at_velocity(self.DEFAULT_ANGULAR_VEL, self.angle_change)
                 rospy.loginfo("CHECK THIS OUT !!!!!!!!!!")
             else:
+                rospy.loginfo("handling obs")
                 self.handle_obstacle()  # Handle obstacle if detected
 
     """

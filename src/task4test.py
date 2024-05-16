@@ -15,7 +15,7 @@ import numpy as np
 
 class task4test:
 
-    def __init__(self):
+    def __init__(self, target_colour):
         self.node_name = "t4_node"
 
         rospy.init_node(self.node_name, anonymous=True)
@@ -60,8 +60,11 @@ class task4test:
 
         self.m00 = 0
         self.m00_min = 1000
+
+        self.target_colour = target_colour
         
         rospy.on_shutdown(self.shutdown_hook)
+        rospy.loginfo(f"The '{self.node_name}' node is active...")
 
     def shutdown_hook(self):
         self.cmd_vel_pub.publish(Twist())
@@ -86,6 +89,7 @@ class task4test:
         
     def main(self):
         self.pose_stamp.header.frame_id = 'map'
+        rospy.loginfo("TASK 4 BEACON: The target is {colour}.")
         while not self.ctrl_c:
             #if cylinder detected and colour not found before
             if(self.detect_colour.cylinder_detected() and not(self.detect_colour.main_colour in self.cylinders_found)):
@@ -187,7 +191,8 @@ class task4test:
 
 
 if __name__ == '__main__':
-    node = task4test()
+    target_colour = rospy.get_param('~target_colour', 'red')
+    node = task4test(target_colour)
     try:
         node.main()
     except rospy.ROSInterruptException:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Import the core Python modules for ROS and to implement ROS Actions:
+from pathlib import Path
 import rospy
 
 # Import some image processing modules:
@@ -224,7 +225,15 @@ class DetectPillar():
                 #print(cnt_area_dict[1])
                 
                 counter+=1
-            
+        
+        try:
+            cv_img = self.cvbridge_interface.imgmsg_to_cv2(img_data, desired_encoding="bgr8")
+        except CvBridgeError as e:
+            rospy.logerr(e)
+
+
+        
+
     def calc_main_colour(self, masked_img_array):
         colour = ""
         #finds colour for which there is the most detected in image

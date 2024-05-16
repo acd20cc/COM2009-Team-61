@@ -63,5 +63,6 @@
         args="-d $(find turtlebot3_navigation)/rviz/turtlebot3_navigation.rviz"/>
 
     <node pkg = "com2009_team61" type = "task4test.py" name = "t4_node" output = "screen">
+    <arg name="target_colour" default="red"/>
     </node>
 </launch>
