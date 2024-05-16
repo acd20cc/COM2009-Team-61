@@ -59,6 +59,7 @@ class DetectPillar():
         hsv_orig_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2HSV)
         crop_img = cv_img[int(height/3):int((height/2)+(height/4)), 0:width]
         hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
+        self.image = cv_img
         
         #SIMULATION COLOURS:
         #blue
@@ -230,8 +231,20 @@ class DetectPillar():
                 return True
         return False
 
-        def save_image(self):
-            abc = 1
+    def save_image(self):
+        image = self.image
+        #create directory to save image in
+        path = os.path.join(self.current_directory, "snaps")
+        #check if directory exists
+        if(not os.path.isdir(path)):
+            os.mkdir(path)
+        full_image_path = os.path.join(path, "task4_beacon.jpg")
+        print(f"Saving the image to '{full_image_path}'...")
+        cv2.imwrite(str(full_image_path), image)
+        print(f"Saved an image to '{full_image_path}'\n"
+        f"image dims = {image.shape[0]}x{image.shape[1]}px")
+        print("**IMPORTANT: Close the image pop-up window to continue!**")
+        
 #approximates distance of the cylinder based on its observed width
 def approx_dist(width):
     #set the base known relationship of distance to pixel width of cylinder

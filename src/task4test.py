@@ -99,14 +99,14 @@ class task4test:
                 self.vel.angular.z = self.turn_vel_slow * self.turn_dir
                 self.cmd_vel_pub.publish(self.vel)
             if(self.turn_rate == "stop"):
-                for i in range(10):
+                for i in range(4):
                     self.rate.sleep()
                 self.vel.linear.x = 0.0
                 self.vel.angular.z = 0.0
                 self.cmd_vel_pub.publish(self.vel)
                 self.cylinder_found = True
-
-            print(self.vel.linear.x, " ", self.vel.angular.z)
+                self.detect_colour.save_image()
+                
             difference = rospy.get_rostime().secs - self.time_now
             #print(self.turn_rate)
             if ((self.turn_rate == "") and (self.moving_to_coor == False) 
