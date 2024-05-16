@@ -83,7 +83,7 @@ class MazeSolver:
         Default Maze-solve algorithm
         """
         while not self.ctrl_c:
-            min_dist = self.front_dist > 0.41
+            min_dist = self.front_dist > 0.4
 
             # If the distance of right side is less than 0.3 and distance front side is bigger than 0.39 turn right
             # right_distance is used to prioritise the right side from two ways.
@@ -92,7 +92,7 @@ class MazeSolver:
                 print(self.posx)
                 print(self.posy)
                 self.vel.linear.x = self.max_velocity 
-                self.vel.angular.z = 1
+                self.vel.angular.z = 0.9
                 self.decision = "left"
 
             # If the distance on the right is between 0.3 and 0.4 units and min_dist is true, proceed forward.
@@ -103,6 +103,14 @@ class MazeSolver:
                 self.vel.linear.x = self.max_velocity
                 self.vel.angular.z = 0
                 self.decision = "forward"
+                # Centering logic to stay in the middle of the path
+                if abs(self.left_dist - self.right_dist) > 0.15:
+                    if self.left_dist > self.right_dist:
+                        # Adjust to move right
+                        self.vel.angular.z -= 0.1
+                    else:
+                        # Adjust to move left
+                        self.vel.angular.z += 0.1
 
             # If right side is open, turn to the right side
             elif self.right_dist > 0.3 and min_dist:
@@ -110,16 +118,31 @@ class MazeSolver:
                 print(self.posx)
                 print(self.posy)
                 self.vel.linear.x = self.max_velocity
-                self.vel.angular.z = -1
+                self.vel.angular.z = -0.9
                 self.decision = "right"
 
             # else turn 180 degree until free space is scanned.
+            elif self.front_dist < 0.4 :
+                if self.left_dist > 0.3:
+                    print("Obstacle detected in front, turning the object to the left")
+                    self.vel.linear.x = 0
+                    self.vel.angular.z = 1.0
+                    self.decision = "backward"
+
+                elif self.right_dist > 0.3:
+                    print("Obstacle detected in front, turning the object to the right")
+                    self.vel.linear.x = 0
+                    self.vel.angular.z = -1.0
+                    self.decision = "backward"
+
             else:
-                print("Obstacle detected in front, turning the object")
+                print("Turning Left")
                 self.vel.linear.x = 0
-                self.vel.angular.z = 1
-                self.cmd_vel_pub.publish(self.vel)
-                self.decision = "backward"
+                self.vel.angular.z = 1.0
+
+
+                
+            
 
             # publish the movement
             self.cmd_vel_pub.publish(self.vel)
@@ -131,7 +154,7 @@ class MazeSolver:
         """
         # Mark forward as visited
         if self.decision == "forward":
-            self.visited.add("forward") 
+            self.visited.add("forward")
         # Mark left as visited
         elif self.decision == "left":
             self.visited.add("left") 
