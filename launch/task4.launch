@@ -18,7 +18,9 @@
 
     <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/>
 
-    <node pkg = "com2009_team61" type = "maze.py" name = "maze_node" output = "screen">
+    <node pkg = "com2009_team61" type = "mazeExecutePath.py" name = "maze_node" output = "screen">
+    </node>
+    <node pkg = "com2009_team61" type = "mapsaver.py" name = "map_saver_seconds" output = "screen">
     </node>
 
     <arg name="cmd_vel_topic" default="/cmd_vel" />

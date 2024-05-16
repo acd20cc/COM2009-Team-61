@@ -31,6 +31,9 @@ class task4test:
         self.move_base_cancel = rospy.Publisher('/move_base/cancel', GoalID, queue_size=10)
         #self.camera_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.detect_colour.camera_callback) 
         self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw", Image, self.detect_colour.camera_callback)
+
+        #set as the colour that should be found
+        self.colour_to_find = "red"
         
         self.published = 0
         self.moving_to_coor = False
@@ -43,9 +46,7 @@ class task4test:
 
         self.time_now = time_now = rospy.get_rostime().secs
 
-        self.colour_turning_to = 0
-        self.cylinder_coordinates = {"blue":[], "yellow":[], "green":[], "red":[]}
-        self.cylinders_found = [] #list of found cylinders
+        self.cylinder_found = False
         self.colour_goal_id = {"random":[],"blue":[], "yellow":[], "green":[], "red":[]}
         
         self.odom_data = Odometry()
@@ -91,28 +92,25 @@ class task4test:
         self.pose_stamp.header.frame_id = 'map'
         rospy.loginfo("TASK 4 BEACON: The target is {colour}.")
         while not self.ctrl_c:
-            #if cylinder detected and colour not found before
-            if(self.detect_colour.cylinder_detected() and not(self.detect_colour.main_colour in self.cylinders_found)):
-                print("Cylinder of colour: " + self.detect_colour.main_colour + " found")
-                self.cylinders_found.append(self.detect_colour.main_colour)
-                self.moving_to_coor = False
             # #decides turn rate based on moments stored
-            # self.decide_turn_rate()
-            # if(self.turn_rate == "fast"):
-            #     self.vel.linear.x = 0.0
-            #     self.vel.angular.z = self.turn_vel_fast * self.turn_dir
-            #     self.cmd_vel_pub.publish(self.vel)
-            # if(self.turn_rate == "slow"):
-            #     self.vel.linear.x = 0.0
-            #     self.vel.angular.z = self.turn_vel_slow * self.turn_dir
-            #     self.cmd_vel_pub.publish(self.vel)
-            # if(self.turn_rate == "stop"):
-            #     for i in range(30):
-            #         self.rate.sleep()
-            #     self.vel.linear.x = 0.0
-            #     self.vel.angular.z = 0.0
-            #     self.cmd_vel_pub.publish(self.vel)
-            #print(self.vel.linear.x, " ", self.vel.angular.z)
+            self.decide_turn_rate()
+            if(self.turn_rate == "fast"):
+                self.vel.linear.x = 0.0
+                self.vel.angular.z = self.turn_vel_fast * self.turn_dir
+                self.cmd_vel_pub.publish(self.vel)
+            if(self.turn_rate == "slow"):
+                self.vel.linear.x = 0.0
+                self.vel.angular.z = self.turn_vel_slow * self.turn_dir
+                self.cmd_vel_pub.publish(self.vel)
+            if(self.turn_rate == "stop"):
+                for i in range(4):
+                    self.rate.sleep()
+                self.vel.linear.x = 0.0
+                self.vel.angular.z = 0.0
+                self.cmd_vel_pub.publish(self.vel)
+                self.cylinder_found = True
+                self.detect_colour.save_image()
+                
             difference = rospy.get_rostime().secs - self.time_now
             #print(self.turn_rate)
             if ((self.turn_rate == "") and (self.moving_to_coor == False) 
@@ -139,6 +137,7 @@ class task4test:
     #generates random coordinates and makes robot move to them
     def move_to_random_coordinate(self, difference):
         if(not self.random_generated):
+            #self.hard_coor()
             self.generate_rand_coor()
         if(not self.processed_goal("random")):
             print("published rand")
@@ -147,9 +146,16 @@ class task4test:
         #will generate new random coordinates after a certain time has passed
         if(difference > 20):
             print("published new rand")
+            #self.hard_coor()
             self.generate_rand_coor()
             self.move_base_simple_pub.publish(self.pose_stamp)
             self.time_now = rospy.get_rostime().secs
+
+    def hard_coor(self):
+        self.time_started = rospy.get_rostime().secs
+        self.pose_stamp.pose.position.x = 1
+        self.pose_stamp.pose.position.y = 1
+        self.pose_stamp.pose.orientation.w = 1.0
 
     def generate_rand_coor(self):
         self.time_started = rospy.get_rostime().secs
@@ -158,36 +164,33 @@ class task4test:
         self.pose_stamp.pose.orientation.w = 1.0
 
     def decide_turn_rate(self):
+        colour = self.colour_to_find
+        colour_number = self.detect_colour.colour_to_num[colour]
         self.turn_rate = ""
-        for i in range(4):
-            #no coordinates for that colour and colour not fully seen before
-            c = self.detect_colour.num_to_colour[i]
-            if((self.cylinder_coordinates[c] == []) and (not (c in self.cylinders_found))):
-                #there is recorded estimated distance information for that cylinder colour
-                if(not (self.detect_colour.cylinder_info[i] == [])):
-                    #cancel current goal to look at new cylinder
-                    #if(self.processed_goal(c)):
-                        #print("cancelled goal")
-                        #self.cancel_goal(self.goal_id)
-                    self.colour_turning_to = i
-                    self.m00 = self.detect_colour.cylinder_info[i][0]
-                    cx = self.detect_colour.cylinder_info[i][1]
-                    cy = self.detect_colour.cylinder_info[i][2]
-                    if self.m00 > self.m00_min:
-                        half_width = self.camera_width/2
-                        if cx < half_width:
-                            self.turn_dir = 1
-                        else:
-                            self.turn_dir = -1
-                        # blob detected
-                        if cx >= half_width-60 and cx <= half_width+60:
-                            self.turn_rate = 'stop'
-                        elif cx >= half_width-240 and cx <= half_width+240:
-                            self.turn_rate = 'slow'
-                        else:
-                            self.turn_rate = 'fast'
-                    break
-
+        #colour not seen before
+        if(not (self.cylinder_found)):
+            #there is recorded estimated distance information for that cylinder colour
+            if(not (self.detect_colour.cylinder_info[colour_number] == [])):
+                #cancel current goal to look at cylinder
+                if(self.processed_goal(colour)):
+                    print("cancelled goal")
+                    self.cancel_goal(self.goal_id)
+                self.m00 = self.detect_colour.cylinder_info[colour_number][0]
+                cx = self.detect_colour.cylinder_info[colour_number][1]
+                cy = self.detect_colour.cylinder_info[colour_number][2]
+                if self.m00 > self.m00_min:
+                    half_width = self.camera_width/2
+                    if cx < half_width:
+                        self.turn_dir = 1
+                    else:
+                        self.turn_dir = -1
+                    # blob detected
+                    if cx >= half_width-80 and cx <= half_width+80:
+                        self.turn_rate = 'stop'
+                    elif cx >= half_width-240 and cx <= half_width+240:
+                        self.turn_rate = 'slow'
+                    else:
+                        self.turn_rate = 'fast'
 
 
 if __name__ == '__main__':
