@@ -2,28 +2,25 @@
     <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
     <arg name="move_forward_only" default="false"/>
 
+    <!-- init arguments -->
+    <arg name="cmd_vel_topic" default="/cmd_vel"/>
+    <arg name="odom_topic" default="/odom"/>
+
     <!-- mapping node initialised -->
     <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" required="true">
         <param name="linearUpdate" value="0.15"/>
+        <param name="xmin" value="-5"/>
+        <param name="ymin" value="-5"/>
         <param name="xmax" value="5"/>
         <param name="ymax" value="5"/>
         <param name="maxUrange" value="10"/>
     </node>
 
     <!-- to save map to a file -->
-    <arg name="map_folder" default="map"/>
+    <!-- <arg name="map_folder" default="map"/>
     <node name="map_saver" pkg="map_server" type="map_saver" args="static_map:=dynamic_map -f $(find com2009_team61)/launch/maps/map">
         <remap from="/map" to="$(arg map_folder)"/>
-    </node>
-
-    <!-- init arguments -->
-    <arg name="map_file" default="$(find com2009_team61)/launch/maps/map.yaml"/>
-    <arg name="initial_pose_x" default="0.0"/>
-    <arg name="initial_pose_y" default="0.0"/>
-    <arg name="initial_pose_a" default="0.0"/>
-    <arg name="cmd_vel_topic" default="/cmd_vel"/>
-    <arg name="odom_topic" default="odom"/>
-    <arg name="use_map_topic" default="true"/>
+    </node> -->
 
     <!-- Turtlebot3 Bringup -->
     <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
@@ -36,7 +33,6 @@
         <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
         <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
         <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
-        <arg name="use_map_topic" value="$(arg use_map_topic)"/>
     </include> -->
 
     <!-- <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
