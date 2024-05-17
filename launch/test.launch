@@ -17,10 +17,8 @@
     </node>
 
     <!-- to save map to a file -->
-    <!-- <arg name="map_folder" default="map"/>
-    <node name="map_saver" pkg="map_server" type="map_saver" args="static_map:=dynamic_map -f $(find com2009_team61)/launch/maps/map">
-        <remap from="/map" to="$(arg map_folder)"/>
-    </node> -->
+    <node pkg = "com2009_team61" type = "mapsaver.py" name = "mapsaver" output = "screen">
+    </node>
 
     <!-- Turtlebot3 Bringup -->
     <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">

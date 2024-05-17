@@ -235,7 +235,8 @@ class DetectPillar():
     def save_image(self):
         image = self.image
         #create directory to save image in
-        path = os.path.join(self.current_directory, "snaps")
+        parent = os.path.dirname(self.current_directory)
+        path = os.path.join(parent, "snaps")
         #check if directory exists
         if(not os.path.isdir(path)):
             os.mkdir(path)
