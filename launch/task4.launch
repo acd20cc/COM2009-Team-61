@@ -1,32 +1,62 @@
 <launch>
-    <arg name="initial_pose_a" default="0.0"/>
     <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
     <arg name="move_forward_only" default="false"/>
+    <arg name="target_colour" default="red"/>
 
+    <!-- init arguments -->
+    <arg name="cmd_vel_topic" default="/cmd_vel"/>
+    <arg name="odom_topic" default="/odom"/>
 
-    <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch"/>
-
-    <arg name="map_folder" default="map"/>
-    <node name="map_saver" pkg="map_server" type="map_saver" args="-f $(find com2009_team61)/launch/maps/map">
-        <remap from="/map" to="$(arg map_folder)"/>
+    <!-- mapping node initialised -->
+    <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" required="true">
+        <param name="linearUpdate" value="0.15"/>
+        <param name="xmin" value="-5"/>
+        <param name="ymin" value="-5"/>
+        <param name="xmax" value="5"/>
+        <param name="ymax" value="5"/>
+        <param name="maxUrange" value="10"/>
     </node>
 
-    <!-- Map server -->
-    <arg name="map_file" default="$(find com2009_team61)/launch/maps/map.yaml"/>
-    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">
+    <!-- to save map to a file -->
+    <node pkg = "com2009_team61" type = "mapsaver.py" name = "mapsaver" output = "screen">
     </node>
 
-    <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/>
+    <!-- Turtlebot3 Bringup -->
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+        <arg name="model" value="$(arg model)" />
+    </include>
 
-    <node pkg = "com2009_team61" type = "mazeExecutePath.py" name = "maze_node" output = "screen">
-    </node>
-    <node pkg = "com2009_team61" type = "mapsaver.py" name = "map_saver_seconds" output = "screen">
-    </node>
+    <!-- <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)"/> -->
 
-    <arg name="cmd_vel_topic" default="/cmd_vel" />
-    <arg name="odom_topic" default="odom" />
+    <!-- <include file="$(find turtlebot3_navigat ion)/launch/amcl.launch">
+        <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
+        <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
+        <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
+    </include> -->
+
     <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
         <arg name="model" value="$(arg model)" />
         <arg name="move_forward_only" value="$(arg move_forward_only)"/>
     </include>
+
+     <!-- move_base -->
+  <!-- <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <rosparam file="$(find com2009_team61)/launch/cost/costmap_common_params_$(arg model).yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find com2009_team61)/launch/cost/costmap_common_params_$(arg model).yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find com2009_team61)/launch/cost/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find com2009_team61)/launch/cost/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find com2009_team61)/launch/cost/move_base_params.yaml" command="load" />
+    <rosparam file="$(find com2009_team61)/launch/cost/dwa_local_planner_params_$(arg model).yaml" command="load" />
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <remap from="odom" to="$(arg odom_topic)"/>
+    <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
+  </node> -->
+
+    <!-- rviz -->
+    <node pkg="rviz" type="rviz" name="rviz" required="true"
+        args="-d $(find turtlebot3_navigation)/rviz/turtlebot3_navigation.rviz"/>
+
+    <node pkg = "com2009_team61" type = "task4test.py" name = "t4_node" output = "screen" args="-target_colour $(arg target_colour)">
+    </node>
 </launch>

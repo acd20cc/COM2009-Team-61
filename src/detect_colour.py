@@ -26,7 +26,7 @@ class DetectPillar():
         #self.camera_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.camera_callback)
         self.cvbridge_interface = CvBridge()
 
-        self.main_colour = ""
+        # self.main_colour = ""
         self.current_directory = os.path.dirname(os.path.realpath(__file__))
 
         self.ctrl_c = False
@@ -39,7 +39,7 @@ class DetectPillar():
         #dict of cylinder information (moments, approx distance)
         self.cylinder_info = {0:[],1:[],2:[],3:[]}
         #CHANGE FOR IRL ROBOT
-        self.camera_resolution = [1920, 1080]
+        self.camera_resolution = [848, 480]
 
     def shutdown_ops(self):
         cv2.destroyAllWindows()
@@ -64,89 +64,89 @@ class DetectPillar():
         
         #SIMULATION COLOURS:
         #blue
-        blue_lower = (115, 224, 100)
-        blue_upper = (130, 255, 255)
-        blue = (blue_lower, blue_upper)
-
-        #yellow
-        yellow_lower = (25, 90, 100)
-        yellow_upper = (35, 260, 255)
-        yellow = (yellow_lower, yellow_upper)
-
-        #green
-        green_lower = (50,105,0)
-        green_upper = (65,260,255)
-        green = (green_lower, green_upper)
-
-        #red
-        red_lower = (-5,130,0)
-        red_upper = (7,260,255)
-        red = (red_lower, red_upper)
-        
-        #IRL COLOURS:
-        # #blue
-        # blue_lower = (102, 240, 80)
-        # blue_upper = (107, 260, 200)
+        # blue_lower = (115, 224, 100)
+        # blue_upper = (130, 255, 255)
         # blue = (blue_lower, blue_upper)
 
         # #yellow
-        # yellow_lower = (18, 170, 50)
-        # yellow_upper = (30, 260, 200)
+        # yellow_lower = (25, 90, 100)
+        # yellow_upper = (35, 260, 255)
         # yellow = (yellow_lower, yellow_upper)
 
         # #green
-        # green_lower = (75, 150, 70)
-        # green_upper = (92, 260, 150)
+        # green_lower = (50,105,0)
+        # green_upper = (65,260,255)
         # green = (green_lower, green_upper)
 
         # #red
-        # red_lower = (-2, 190, 50)
-        # red_upper = (6, 260, 255)
+        # red_lower = (-5,130,0)
+        # red_upper = (7,260,255)
         # red = (red_lower, red_upper)
+        
+        #IRL COLOURS:
+        #blue
+        blue_lower = (102, 240, 80)
+        blue_upper = (107, 260, 200)
+        blue = (blue_lower, blue_upper)
 
-        #set mask ranges for each colour
-        blue_mask = cv2.inRange(hsv_img, blue[0], blue[1])
-        yellow_mask = cv2.inRange(hsv_img, yellow[0], yellow[1])
-        green_mask = cv2.inRange(hsv_img, green[0], green[1])
-        red_mask = cv2.inRange(hsv_img, red[0], red[1])
+        #yellow
+        yellow_lower = (18, 170, 50)
+        yellow_upper = (30, 260, 200)
+        yellow = (yellow_lower, yellow_upper)
 
-        #tries all masks on image
-        img_blue =  cv2.bitwise_and(crop_img, crop_img, mask = blue_mask)
-        img_yellow =  cv2.bitwise_and(crop_img, crop_img, mask = yellow_mask) 
-        img_green =  cv2.bitwise_and(crop_img, crop_img, mask = green_mask) 
-        img_red =  cv2.bitwise_and(crop_img, crop_img, mask = red_mask)
+        #green
+        green_lower = (75, 150, 70)
+        green_upper = (92, 260, 150)
+        green = (green_lower, green_upper)
 
-        #find contours in image for each masked image
-        blue_contours,_ = cv2.findContours(blue_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        yellow_contours,_ = cv2.findContours(yellow_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        green_contours,_ = cv2.findContours(green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        red_contours,_ = cv2.findContours(red_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        contour_array = [blue_contours, yellow_contours, green_contours, red_contours]
+        #red
+        red_lower = (-2, 190, 50)
+        red_upper = (6, 260, 255)
+        red = (red_lower, red_upper)
 
-        masked_img_array = [img_blue, img_yellow, img_green, img_red]
-        self.calc_main_colour(masked_img_array)
+        # #set mask ranges for each colour
+        # blue_mask = cv2.inRange(hsv_img, blue[0], blue[1])
+        # yellow_mask = cv2.inRange(hsv_img, yellow[0], yellow[1])
+        # green_mask = cv2.inRange(hsv_img, green[0], green[1])
+        # red_mask = cv2.inRange(hsv_img, red[0], red[1])
+
+        # #tries all masks on image
+        # img_blue =  cv2.bitwise_and(crop_img, crop_img, mask = blue_mask)
+        # img_yellow =  cv2.bitwise_and(crop_img, crop_img, mask = yellow_mask) 
+        # img_green =  cv2.bitwise_and(crop_img, crop_img, mask = green_mask) 
+        # img_red =  cv2.bitwise_and(crop_img, crop_img, mask = red_mask)
+
+        # #find contours in image for each masked image
+        # blue_contours,_ = cv2.findContours(blue_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # yellow_contours,_ = cv2.findContours(yellow_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # green_contours,_ = cv2.findContours(green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # red_contours,_ = cv2.findContours(red_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # contour_array = [blue_contours, yellow_contours, green_contours, red_contours]
+
+        # masked_img_array = [img_blue, img_yellow, img_green, img_red]
+        # self.calc_main_colour(masked_img_array)
 
         #get biggest found area for the main colour contour
-        biggest_area = 0
-        area_cnt_arr = []
-        if(self.main_colour != ""):
-            for cnt in contour_array[self.colour_to_num[self.main_colour]]:
-                area = cv2.contourArea(cnt)
-                if(area >= biggest_area):
-                    area_cnt_arr = [area, cnt]
-                    biggest_area = area
+        # biggest_area = 0
+        # area_cnt_arr = []
+        # if(self.main_colour != ""):
+        #     for cnt in contour_array[self.colour_to_num[self.main_colour]]:
+        #         area = cv2.contourArea(cnt)
+        #         if(area >= biggest_area):
+        #             area_cnt_arr = [area, cnt]
+        #             biggest_area = area
 
-            #if area is bigger than a certain amount, the robot is seeing the full cylinder
-            if(area_cnt_arr[0] > 25000):
-                self.full_cylinder[self.main_colour] = True
-                #find and set moments for the full cylinder
-                M = cv2.moments(area_cnt_arr[1])
-                m0 = (M['m00'] + 1e-5)
-                cx = int(M['m10']/(M['m00'] + 1e-5))
-                cy = int(M['m01']/(M['m00'] + 1e-5))
-                self.cylinder_info[self.colour_to_num[self.main_colour]] = [m0,cx,cy]
-            else:
-                self.full_cylinder[self.main_colour] = False
+        #     #if area is bigger than a certain amount, the robot is seeing the full cylinder
+        #     if(area_cnt_arr[0] > 25000):
+        #         self.full_cylinder[self.main_colour] = True
+        #         #find and set moments for the full cylinder
+        #         M = cv2.moments(area_cnt_arr[1])
+        #         m0 = (M['m00'] + 1e-5)
+        #         cx = int(M['m10']/(M['m00'] + 1e-5))
+        #         cy = int(M['m01']/(M['m00'] + 1e-5))
+        #         self.cylinder_info[self.colour_to_num[self.main_colour]] = [m0,cx,cy]
+        #     else:
+        #         self.full_cylinder[self.main_colour] = False
 
         #
         #for original image
@@ -195,7 +195,7 @@ class DetectPillar():
                 approx = cv2.approxPolyDP(area_cnt[1], 0.015 * cv2.arcLength(area_cnt[1], True), True)
                 #coordinates of rectangle generated by approximation
                 x1,y1,w1,h1 = cv2.boundingRect(approx)
-                cv2.rectangle(cv_img,(x1,y1),(x1+w1,y1+h1),(0,255,0),2)
+                ##cv2.rectangle(cv_img,(x1,y1),(x1+w1,y1+h1),(0,255,0),2)
                 #coordinates of rectangle generated by actual contours
                 x,y,w,h = cv2.boundingRect(area_cnt[1])
                 #get average of the 2 calculations' width and calc approx distance using that
@@ -208,7 +208,7 @@ class DetectPillar():
                 cy = int(M['m01']/M['m00'])
                 #save found moments and approx distance for each colour detected in a dict to
                 #be accessed and acted on outside the class
-                self.cylinder_info[counter] = [m0,cx,cy,approx_dist(average_width)]
+                self.cylinder_info[counter] = [m0,cx,cy,approx_distance]
 
                 #cv2.rectangle(hsv_orig_img,(x,y),(x+w,y+h),(0,255,0),2)
                 #print(cnt_area_dict[1])
@@ -217,14 +217,14 @@ class DetectPillar():
         cv2.imshow('image', cv_img)
         cv2.waitKey(1)
             
-    def calc_main_colour(self, masked_img_array):
-        colour = ""
-        #finds colour for which there is the most detected in image
-        for i in range(4):
-            for j in range(i,4):
-                if(np.sum(masked_img_array[i]) > np.sum(masked_img_array[j])):
-                    colour = self.num_to_colour[i]
-        self.main_colour = colour
+    # def calc_main_colour(self, masked_img_array):
+    #     colour = ""
+    #     #finds colour for which there is the most detected in image
+    #     for i in range(4):
+    #         for j in range(i,4):
+    #             if(np.sum(masked_img_array[i]) > np.sum(masked_img_array[j])):
+    #                 colour = self.num_to_colour[i]
+    #     self.main_colour = colour
 
     def cylinder_detected(self):
         for i in self.full_cylinder.keys():
@@ -233,6 +233,7 @@ class DetectPillar():
         return False
 
     def save_image(self):
+        print("called save")
         image = self.image
         #create directory to save image in
         parent = os.path.dirname(self.current_directory)
@@ -245,7 +246,6 @@ class DetectPillar():
         cv2.imwrite(str(full_image_path), image)
         print(f"Saved an image to '{full_image_path}'\n"
         f"image dims = {image.shape[0]}x{image.shape[1]}px")
-        print("**IMPORTANT: Close the image pop-up window to continue!**")
         
 #approximates distance of the cylinder based on its observed width
 def approx_dist(width):

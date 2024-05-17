@@ -12,14 +12,15 @@ from tf.transformations import euler_from_quaternion
 from sensor_msgs.msg import Image
 from detect_colour import DetectPillar
 import numpy as np
+import argparse
 
 class task4test:
 
-    def __init__(self, target_colour):
+    def __init__(self):
         self.node_name = "t4_node"
 
         rospy.init_node(self.node_name, anonymous=True)
-        self.rate = rospy.Rate(10)
+        self.rate = rospy.Rate(5)
 
         self.detect_colour = DetectPillar()
 
@@ -29,16 +30,13 @@ class task4test:
         self.move_base_simple_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
         self.move_base_status = rospy.Subscriber('/move_base/status', GoalStatusArray, self.goal_status_callback)
         self.move_base_cancel = rospy.Publisher('/move_base/cancel', GoalID, queue_size=10)
-        #self.camera_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.detect_colour.camera_callback) 
-        self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw", Image, self.detect_colour.camera_callback)
-
-        #set as the colour that should be found
-        self.colour_to_find = "red"
+        self.camera_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.detect_colour.camera_callback) 
+        #self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw", Image, self.detect_colour.camera_callback)
         
         self.published = 0
         self.moving_to_coor = False
         self.turn_dir = 1
-        self.turn_rate = ""
+        self.turn_rate = "slow"
         self.turn_vel_fast = 0.2
         self.turn_vel_slow = 0.05
         self.random_generated = False
@@ -56,13 +54,23 @@ class task4test:
         self.goal_status = GoalStatus()
         self.goal_id = GoalID()
         self.ctrl_c = False
-        self.camera_width = 1920
-        self.camera_height = 1080
+        self.camera_width = 848
+        self.camera_height = 480
 
         self.m00 = 0
-        self.m00_min = 1000
+        self.m00_min = 20
 
-        self.target_colour = target_colour
+        #set as the colour that should be found
+        cli = argparse.ArgumentParser(description=f"colour for beacon")
+        cli.add_argument(
+            "-target_colour",
+            metavar= "COL",
+            default="red",
+            help="get the colour"
+        )
+        self.args = cli.parse_args(rospy.myargv()[1:])
+        print(self.args)
+        self.target_colour = self.args.target_colour
         
         rospy.on_shutdown(self.shutdown_hook)
         rospy.loginfo(f"The '{self.node_name}' node is active...")
@@ -90,7 +98,7 @@ class task4test:
         
     def main(self):
         self.pose_stamp.header.frame_id = 'map'
-        rospy.loginfo("TASK 4 BEACON: The target is {colour}.")
+        rospy.loginfo(f"TASK 4 BEACON: The target is {self.target_colour}.")
         while not self.ctrl_c:
             # #decides turn rate based on moments stored
             self.decide_turn_rate()
@@ -103,8 +111,7 @@ class task4test:
                 self.vel.angular.z = self.turn_vel_slow * self.turn_dir
                 self.cmd_vel_pub.publish(self.vel)
             if(self.turn_rate == "stop"):
-                for i in range(4):
-                    self.rate.sleep()
+                print("stop command")
                 self.vel.linear.x = 0.0
                 self.vel.angular.z = 0.0
                 self.cmd_vel_pub.publish(self.vel)
@@ -113,8 +120,7 @@ class task4test:
                 
             difference = rospy.get_rostime().secs - self.time_now
             #print(self.turn_rate)
-            if ((self.turn_rate == "") and (self.moving_to_coor == False) 
-                and ((difference > 20) or not self.processed_goal("random"))):
+            if ((self.turn_rate == "") and (self.moving_to_coor == False) and ((difference > 20) or not self.processed_goal("random"))):
                 self.move_to_random_coordinate(difference)
                     
             self.rate.sleep()
@@ -123,9 +129,8 @@ class task4test:
     def processed_goal(self, colour):
         if(self.goal_status_arr.status_list == []):
             return False
-        self.colour_goal_id[colour] = self.goal_status.goal_id
-        self.goal_status = self.goal_status_arr.status_list[0]
         self.goal_id = self.goal_status.goal_id
+        self.goal_status = self.goal_status_arr.status_list[0]
         if(self.goal_status.status < 4):
             return True
         return False
@@ -164,13 +169,14 @@ class task4test:
         self.pose_stamp.pose.orientation.w = 1.0
 
     def decide_turn_rate(self):
-        colour = self.colour_to_find
+        colour = self.target_colour
         colour_number = self.detect_colour.colour_to_num[colour]
         self.turn_rate = ""
         #colour not seen before
         if(not (self.cylinder_found)):
             #there is recorded estimated distance information for that cylinder colour
             if(not (self.detect_colour.cylinder_info[colour_number] == [])):
+                print("detected")
                 #cancel current goal to look at cylinder
                 if(self.processed_goal(colour)):
                     print("cancelled goal")
@@ -194,8 +200,8 @@ class task4test:
 
 
 if __name__ == '__main__':
-    target_colour = rospy.get_param('~target_colour', 'red')
-    node = task4test(target_colour)
+    #target_colour = rospy.get_param('target_colour', 'red')
+    node = task4test()
     try:
         node.main()
     except rospy.ROSInterruptException:
