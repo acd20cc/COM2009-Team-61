@@ -123,7 +123,7 @@ class MazeSolver:
 
             # else turn 180 degree until free space is scanned.
             else:
-                if self.left_dist > 0.3 and self.front_dist < 0.42:
+                if self.left_dist > 0.3 and self.front_dist > 0.42:
                     print("Obstacle detected in front, turning the object to the left")
                     self.vel.linear.x = 0.0
                     self.vel.angular.z = 1.0
@@ -134,6 +134,11 @@ class MazeSolver:
                     self.vel.linear.x = 0
                     self.vel.angular.z = -1.0
                     self.decision = "backward"
+                else:
+                    print("turning")
+                    self.vel.linear.x = 0.0
+                    self.vel.angular.z = 1.0
+
 
 
                 
