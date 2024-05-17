@@ -23,7 +23,6 @@ class mapSaver():
         filename = f"task4_map"
         parent_directory = os.path.dirname(self.current_directory)
         file = parent_directory + "/maps/" + filename
-        print(file)
 
         # Shell command to save the map using rosrun. 
         command = f"rosrun map_server map_saver -f {file}"  
@@ -32,7 +31,7 @@ class mapSaver():
         call(command.split())  
         
         # Log information about the saved files.
-        rospy.loginfo(f"Map saved as {filename}.yaml and {filename}.pgm")  
+        #rospy.loginfo(f"Map saved as {filename}.yaml and {filename}.pgm")  
         
         # Increment the map count after saving a map.
         self.count += 1  

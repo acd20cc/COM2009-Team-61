@@ -214,8 +214,8 @@ class DetectPillar():
                 #print(cnt_area_dict[1])
                 
                 counter+=1
-        cv2.imshow('image', cv_img)
-        cv2.waitKey(1)
+        # cv2.imshow('image', cv_img)
+        # cv2.waitKey(1)
             
     # def calc_main_colour(self, masked_img_array):
     #     colour = ""
@@ -233,7 +233,6 @@ class DetectPillar():
         return False
 
     def save_image(self):
-        print("called save")
         image = self.image
         #create directory to save image in
         parent = os.path.dirname(self.current_directory)
@@ -242,10 +241,7 @@ class DetectPillar():
         if(not os.path.isdir(path)):
             os.mkdir(path)
         full_image_path = os.path.join(path, "task4_beacon.jpg")
-        print(f"Saving the image to '{full_image_path}'...")
         cv2.imwrite(str(full_image_path), image)
-        print(f"Saved an image to '{full_image_path}'\n"
-        f"image dims = {image.shape[0]}x{image.shape[1]}px")
         
 #approximates distance of the cylinder based on its observed width
 def approx_dist(width):

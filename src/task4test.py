@@ -69,7 +69,6 @@ class task4test:
             help="get the colour"
         )
         self.args = cli.parse_args(rospy.myargv()[1:])
-        print(self.args)
         self.target_colour = self.args.target_colour
         
         rospy.on_shutdown(self.shutdown_hook)
@@ -111,7 +110,6 @@ class task4test:
                 self.vel.angular.z = self.turn_vel_slow * self.turn_dir
                 self.cmd_vel_pub.publish(self.vel)
             if(self.turn_rate == "stop"):
-                print("stop command")
                 self.vel.linear.x = 0.0
                 self.vel.angular.z = 0.0
                 self.cmd_vel_pub.publish(self.vel)
@@ -145,12 +143,12 @@ class task4test:
             #self.hard_coor()
             self.generate_rand_coor()
         if(not self.processed_goal("random")):
-            print("published rand")
+            #print("published rand")
             self.move_base_simple_pub.publish(self.pose_stamp)
             self.random_generated = True
         #will generate new random coordinates after a certain time has passed
         if(difference > 20):
-            print("published new rand")
+            #print("published new rand")
             #self.hard_coor()
             self.generate_rand_coor()
             self.move_base_simple_pub.publish(self.pose_stamp)
@@ -176,10 +174,9 @@ class task4test:
         if(not (self.cylinder_found)):
             #there is recorded estimated distance information for that cylinder colour
             if(not (self.detect_colour.cylinder_info[colour_number] == [])):
-                print("detected")
                 #cancel current goal to look at cylinder
                 if(self.processed_goal(colour)):
-                    print("cancelled goal")
+                    #print("cancelled goal")
                     self.cancel_goal(self.goal_id)
                 self.m00 = self.detect_colour.cylinder_info[colour_number][0]
                 cx = self.detect_colour.cylinder_info[colour_number][1]
