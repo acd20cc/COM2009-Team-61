@@ -83,7 +83,7 @@ class MazeSolver:
         Default Maze-solve algorithm
         """
         while not self.ctrl_c:
-            min_dist = self.front_dist > 0.4
+            min_dist = self.front_dist > 0.40
 
             # If the distance of right side is less than 0.3 and distance front side is bigger than 0.39 turn right
             # right_distance is used to prioritise the right side from two ways.
@@ -122,23 +122,18 @@ class MazeSolver:
                 self.decision = "right"
 
             # else turn 180 degree until free space is scanned.
-            elif self.front_dist < 0.4 :
-                if self.left_dist > 0.3:
+            else:
+                if self.left_dist > 0.3 and self.front_dist < 0.42:
                     print("Obstacle detected in front, turning the object to the left")
-                    self.vel.linear.x = 0
+                    self.vel.linear.x = 0.0
                     self.vel.angular.z = 1.0
                     self.decision = "backward"
 
-                elif self.right_dist > 0.3:
+                elif self.right_dist < 0.3 and self.front_dist > 0.42:
                     print("Obstacle detected in front, turning the object to the right")
                     self.vel.linear.x = 0
                     self.vel.angular.z = -1.0
                     self.decision = "backward"
-
-            else:
-                print("Turning Left")
-                self.vel.linear.x = 0
-                self.vel.angular.z = 1.0
 
 
                 
